@@ -99,7 +99,7 @@ function zrdn_import_yummly(){
 	}
 
 	$recipes = $wpdb->get_results( "select * from $zip_table where original_zip_record is null" );
-	if (!get_option('zrdn_yummly_posts_import_completed'))
+	if (!get_option('zrdn_yummly_posts_import_completed')) {
 		if ($recipes and is_array($recipes)) {
 			foreach ($recipes as $recipe){
 				//get the post it was attached to
