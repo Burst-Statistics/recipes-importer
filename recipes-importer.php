@@ -83,23 +83,31 @@ function zipimporter_run_recipe_import() {
 function zrdn_import_yummly(){
 	//import all recipes
 	global $wpdb;
-	if (!get_option('zrdn_yummly_database_import_completed_3')) {
+	if (!get_option('zrdn_yummly_database_import_completed')) {
 		$zip_table = $wpdb->prefix . "amd_zlrecipe_recipes";
 		$yummly_table = $wpdb->prefix . "amd_yrecipe_recipes";
 		//make sure we know which recipes are from yummly
 
-		$wpdb->query("ALTER TABLE $zip_table ADD original_zip_record int(11);");
-		$wpdb->query("UPDATE $zip_table SET original_zip_record = 1");
+		$wpdb->query( "ALTER TABLE $zip_table ADD original_zip_record int(11);" );
+		$wpdb->query( "UPDATE $zip_table SET original_zip_record = 1" );
 
 		//copy data
-		$wpdb->query("INSERT INTO $zip_table (post_id, recipe_title, recipe_image, summary, prep_time, cook_time, yield, serving_size, calories, fat, ingredients, instructions, notes, created_at) SELECT post_id, recipe_title, recipe_image, summary, prep_time, cook_time, yield, serving_size, calories, fat, ingredients, instructions, notes, created_at FROM $yummly_table");
+		$wpdb->query( "INSERT INTO $zip_table (post_id, recipe_title, recipe_image, summary, prep_time, cook_time, yield, serving_size, calories, fat, ingredients, instructions, notes, created_at) SELECT post_id, recipe_title, recipe_image, summary, prep_time, cook_time, yield, serving_size, calories, fat, ingredients, instructions, notes, created_at FROM $yummly_table" );
 
-		$recipes = $wpdb->get_results("select * from $zip_table where original_zip_record is null");
 
+		update_option( 'zrdn_yummly_database_import_completed', true );
+	}
+
+	$recipes = $wpdb->get_results( "select * from $zip_table where original_zip_record is null" );
+	if (!get_option('zrdn_yummly_posts_import_completed'))
 		if ($recipes and is_array($recipes)) {
 			foreach ($recipes as $recipe){
 				//get the post it was attached to
 				$post_id = $recipe->post_id;
+
+				//check if it's completed
+				if (get_post_meta($post_id, 'zrdn_import_complete', true)) continue;
+
 				$recipe_id = $recipe->recipe_id;
 				$post = get_post($post_id);
 				$oldshortcode = '/\[amd-yrecipe-recipe\:([0-9]+)\]/i';
@@ -111,9 +119,10 @@ function zrdn_import_yummly(){
 					'post_content' => $content,
 				);
 				wp_update_post($post_data);
+				update_post_meta($post_id, 'zrdn_import_complete', true);
 			}
 		}
+		update_option('zrdn_yummly_posts_import_completed', true);
 
-		update_option('zrdn_yummly_database_import_completed_3', true);
 	}
 }
