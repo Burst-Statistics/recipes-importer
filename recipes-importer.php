@@ -104,7 +104,7 @@ function zrdn_import_yummly() {
 		$offset   = get_option( 'zrdn_start_next_batch_at', 0 );
 		$pagesize = 20;
 
-		$recipes = $wpdb->get_results( "select * from $zip_table LIMIT $offset, $pagesize" );
+		$recipes = $wpdb->get_results( "select * from $zip_table where original_zip_record is null LIMIT $offset, $pagesize" );
 		if ( $recipes && is_array( $recipes ) && count( $recipes ) > 0 ) {
 			foreach ( $recipes as $recipe ) {
 
