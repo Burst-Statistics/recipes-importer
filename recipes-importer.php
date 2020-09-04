@@ -5,7 +5,7 @@
     Domain Path: /languages
     Plugin URI: http://www.ziprecipes.net/
     Plugin GitHub: https://github.com/rlankhorst/zip-recipes-free
-    Description: A plugin that adds all the necessary microdata to your recipes, so they will show up in Google's Recipe Search
+    Description: A plugin that imports recipes into Zip Recipes
     Version: 1.0.0
     Author: RogierLankhorst
     Author URI: http://www.ziprecipes.net/
@@ -23,7 +23,6 @@ define('ZIP_RECIPE_BATCH', 10);
   Else start the functions.
 */
 function zipimporter_schedule_cron() {
-	//only set this to false for testing purposes
 	$useCron = false;
 	if ( $useCron ) {
 
