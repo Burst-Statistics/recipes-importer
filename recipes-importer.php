@@ -80,12 +80,13 @@ function zipimporter_run_recipe_import() {
 	}
 }
 
-function zrdn_import_yummly(){
+function zrdn_import_yummly() {
 	//import all recipes
 	global $wpdb;
-	if (!get_option('zrdn_yummly_database_import_completed')) {
-		$zip_table = $wpdb->prefix . "amd_zlrecipe_recipes";
-		$yummly_table = $wpdb->prefix . "amd_yrecipe_recipes";
+	$zip_table    = $wpdb->prefix . "amd_zlrecipe_recipes";
+	$yummly_table = $wpdb->prefix . "amd_yrecipe_recipes";
+	if ( ! get_option( 'zrdn_yummly_database_import_completed' ) ) {
+
 		//make sure we know which recipes are from yummly
 
 		$wpdb->query( "ALTER TABLE $zip_table ADD original_zip_record int(11);" );
@@ -98,31 +99,46 @@ function zrdn_import_yummly(){
 		update_option( 'zrdn_yummly_database_import_completed', true );
 	}
 
-	$recipes = $wpdb->get_results( "select * from $zip_table where original_zip_record is null" );
-	if (!get_option('zrdn_yummly_posts_import_completed')) {
-		if ($recipes and is_array($recipes)) {
-			foreach ($recipes as $recipe){
+	if ( ! get_option( 'zrdn_yummly_posts_import_completed_7' ) ) {
+
+		$offset   = get_option( 'zrdn_start_next_batch_at', 0 );
+		$pagesize = 20;
+
+		$recipes = $wpdb->get_results( "select * from $zip_table LIMIT $offset, $pagesize" );
+		if ( $recipes && is_array( $recipes ) && count( $recipes ) > 0 ) {
+			foreach ( $recipes as $recipe ) {
+
 				//get the post it was attached to
 				$post_id = $recipe->post_id;
 
 				//check if it's completed
-				if (get_post_meta($post_id, 'zrdn_import_complete', true)) continue;
+				if ( get_post_meta( $post_id, 'zrdn_import_complete', true ) ) {
+					continue;
+				}
 
-				$recipe_id = $recipe->recipe_id;
-				$post = get_post($post_id);
-				$oldshortcode = '/\[amd-yrecipe-recipe\:([0-9]+)\]/i';
+				$recipe_id    = $recipe->recipe_id;
+				$post         = get_post( $post_id );
+				if ( $post ) {
+					$oldshortcode = '/\[amd-yrecipe-recipe\:([0-9]+)\]/i';
 
-				$new_shortcode = ZRDN\Util::get_shortcode($recipe_id);
-				$content = preg_replace($oldshortcode, $new_shortcode, $post->post_content, 1);
-				$post_data = array(
-					'ID' => $post_id,
-					'post_content' => $content,
-				);
-				wp_update_post($post_data);
-				update_post_meta($post_id, 'zrdn_import_complete', true);
+					$new_shortcode = ZRDN\Util::get_shortcode( $recipe_id );
+					$content       = preg_replace( $oldshortcode, $new_shortcode, $post->post_content, 1 );
+					$post_data     = array(
+						'ID'           => $post_id,
+						'post_content' => $content,
+					);
+					wp_update_post( $post_data );
+					update_post_meta( $post_id, 'zrdn_import_complete', true );
+				}
+
 			}
+			update_option( 'zrdn_start_next_batch_at', $offset + $pagesize );
+		} else {
+			_log("finished");
+			update_option( 'zrdn_yummly_posts_import_completed_7' , true);
 		}
-		update_option('zrdn_yummly_posts_import_completed', true);
+
 
 	}
+
 }
